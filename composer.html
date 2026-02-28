@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HTML Email Composer (Preview + Draft)</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#0f1733;
+      --panel2:#0c132b;
+      --txt:#e9ecff;
+      --muted:#aeb6e6;
+      --line:rgba(255,255,255,.12);
+      --glow:rgba(120,110,255,.25);
+      --ok:#32d583;
+      --warn:#fdb022;
+      --bad:#f97066;
+      --btn:#6e5bff;
+      --btn2:#2b2f55;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--txt);
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(110,91,255,.35), transparent 60%),
+        radial-gradient(1000px 700px at 90% 20%, rgba(50,213,131,.18), transparent 60%),
+        radial-gradient(900px 700px at 40% 90%, rgba(253,176,34,.16), transparent 65%),
+        var(--bg);
+      min-height:100vh;
+    }
+    header{
+      padding:24px 18px 10px;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .title{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:6px;
+    }
+    .badge{
+      padding:6px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      background:rgba(255,255,255,.04);
+      font-size:12px;
+      letter-spacing:.3px;
+    }
+    h1{
+      font-size:20px;
+      margin:0;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:14px 18px 28px;
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){
+      .wrap{grid-template-columns:1fr}
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+    }
+    .card .hd .left{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .card .hd .t{
+      font-weight:700;
+      font-size:13px;
+      letter-spacing:.2px;
+    }
+    .card .hd .m{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .card .bd{ padding:14px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .grid.full{ grid-template-columns: 1fr; }
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 6px;
+    }
+    input, textarea, select{
+      width:100%;
+      background:rgba(12,19,43,.75);
+      border:1px solid var(--line);
+      color:var(--txt);
+      padding:10px 10px;
+      border-radius:12px;
+      outline:none;
+      transition: border .15s, box-shadow .15s;
+      font-size:13px;
+    }
+    input:focus, textarea:focus{
+      border-color:rgba(110,91,255,.8);
+      box-shadow:0 0 0 4px var(--glow);
+    }
+    textarea{
+      min-height:180px;
+      resize:vertical;
+      font-family:var(--mono);
+      font-size:12px;
+      line-height:1.45;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .btn{
+      appearance:none;
+      border:1px solid transparent;
+      background:linear-gradient(180deg, rgba(110,91,255,1), rgba(90,74,255,1));
+      color:white;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:700;
+      font-size:13px;
+      cursor:pointer;
+      transition: transform .06s ease, filter .15s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.secondary{
+      background:rgba(43,47,85,.65);
+      border-color:rgba(255,255,255,.14);
+      color:var(--txt);
+    }
+    .btn.danger{
+      background:rgba(249,112,102,.16);
+      border-color:rgba(249,112,102,.35);
+    }
+    .btn.small{ padding:8px 10px; font-size:12px; border-radius:11px; }
+
+    .status{
+      margin-left:auto;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:99px;
+      background:rgba(255,255,255,.2);
+      border:1px solid rgba(255,255,255,.18);
+    }
+    .dot.ok{ background:rgba(50,213,131,.9); border-color:rgba(50,213,131,.6); }
+    .dot.warn{ background:rgba(253,176,34,.95); border-color:rgba(253,176,34,.6); }
+    .dot.bad{ background:rgba(249,112,102,.95); border-color:rgba(249,112,102,.6); }
+
+    .note{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+      padding:10px 12px;
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+    }
+
+    .previewShell{
+      height: calc(100vh - 168px);
+      min-height:520px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      overflow:hidden;
+      background:rgba(0,0,0,.15);
+    }
+    iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      background:white;
+    }
+    .tabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+      align-items:center;
+    }
+    .pill{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pill.active{
+      color:var(--txt);
+      border-color:rgba(110,91,255,.55);
+      box-shadow:0 0 0 4px rgba(110,91,255,.16);
+    }
+    .hidden{ display:none !important; }
+
+    .monoBox{
+      font-family:var(--mono);
+      font-size:12px;
+      line-height:1.4;
+      white-space:pre-wrap;
+      word-break:break-word;
+      background:rgba(12,19,43,.75);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      color:var(--txt);
+      max-height: 260px;
+      overflow:auto;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="title">
+      <h1>HTML Email Composer</h1>
+      <span class="badge">Preview • Validate • Export Draft (.eml)</span>
+    </div>
+    <p class="sub">
+      This page <b>does not send email</b>. It helps you compose HTML, preview it, and export a draft file you can open in an email client.
+      (Don’t paste real SMTP passwords into random pages.)
+    </p>
+  </header>
+
+  <main class="wrap">
+    <!-- LEFT: inputs -->
+    <section class="card">
+      <div class="hd">
+        <div class="left">
+          <div class="t">Inputs</div>
+          <div class="m">Recipient, SMTP fields (for reference), headers, and HTML body</div>
+        </div>
+        <div class="status" id="status">
+          <span class="dot" id="dot"></span>
+          <span id="statusText">Waiting…</span>
+        </div>
+      </div>
+
+      <div class="bd">
+        <div class="grid">
+          <div>
+            <label>Recipient Email</label>
+            <input id="recipient_email" placeholder="name@example.com" />
+          </div>
+          <div>
+            <label>From Email</label>
+            <input id="from_email" placeholder="sender@example.com" />
+          </div>
+
+          <div>
+            <label>From Name</label>
+            <input id="from_name" placeholder="ClinicalTrials" />
+          </div>
+          <div>
+            <label>Subject</label>
+            <input id="subject" placeholder="Confirmation Receipt" />
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="grid">
+          <div>
+            <label>SMTP UserName</label>
+            <input id="smtp_username" placeholder="user@domain.com" />
+          </div>
+          <div>
+            <label>SMTP Password</label>
+            <input id="smtp_password" type="password" placeholder="••••••••••" />
+          </div>
+          <div>
+            <label>SMTP Server</label>
+            <input id="smtp_server" placeholder="smtp.mail.ru" />
+          </div>
+          <div>
+            <label>SMTP Port</label>
+            <input id="smtp_port" type="number" placeholder="587" />
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="grid full">
+          <div>
+            <label>HTML Body</label>
+            <textarea id="html_body" spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="row">
+          <button class="btn" id="btnPreview">✨ Affiche HTML Viewer</button>
+          <button class="btn secondary" id="btnCopy">Copy HTML</button>
+          <button class="btn secondary" id="btnDownloadHtml">Download .html</button>
+          <button class="btn secondary" id="btnDraft">Create .eml Draft</button>
+          <button class="btn danger" id="btnTest">Test (Validate)</button>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="note">
+          ✅ Preview uses an <b>iframe sandbox</b>. Some remote images/trackers may be blocked by your browser.<br>
+          📌 “Create .eml Draft” makes a file you can open in Outlook/Thunderbird/etc and send manually.
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: preview -->
+    <section class="card">
+      <div class="hd">
+        <div class="left">
+          <div class="t">Viewer</div>
+          <div class="m">Preview / Source / Generated MIME</div>
+        </div>
+        <div class="tabs">
+          <div class="pill active" data-tab="tabPreview">Preview</div>
+          <div class="pill" data-tab="tabSource">Source</div>
+          <div class="pill" data-tab="tabMime">MIME</div>
+        </div>
+      </div>
+
+      <div class="bd">
+        <div id="tabPreview">
+          <div class="previewShell">
+            <iframe id="viewer" sandbox="allow-same-origin allow-forms allow-popups"></iframe>
+          </div>
+        </div>
+
+        <div id="tabSource" class="hidden">
+          <div class="monoBox" id="sourceBox"></div>
+        </div>
+
+        <div id="tabMime" class="hidden">
+          <div class="monoBox" id="mimeBox"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // --- Helpers ---
+    const $ = (id) => document.getElementById(id);
+    const setStatus = (kind, text) => {
+      const dot = $("dot");
+      dot.className = "dot " + (kind || "");
+      $("statusText").textContent = text;
+    };
+
+    const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || "").trim());
+
+    const defaultHtml = `<!doctype html>
+<html>
+  <body style="margin:0;background:#f6f7fb;font-family:Arial,Helvetica,sans-serif;">
+    <div style="max-width:600px;margin:24px auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e7e7ef;">
+      <div style="padding:18px 18px 10px;background:linear-gradient(135deg,#6e5bff,#2dd4bf);color:#fff;">
+        <div style="font-size:14px;opacity:.95;">ClinicalTrials</div>
+        <div style="font-size:22px;font-weight:700;line-height:1.2;margin-top:6px;">Confirmation Receipt</div>
+      </div>
+      <div style="padding:18px;color:#111827;">
+        <p style="margin:0 0 10px;">Hi 👋</p>
+        <p style="margin:0 0 14px;color:#374151;line-height:1.5;">
+          This is a sample HTML email layout. Replace this content with your own HTML.
+        </p>
+        <a href="https://example.com" style="display:inline-block;background:#6e5bff;color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700;">
+          View details
+        </a>
+        <p style="margin:18px 0 0;font-size:12px;color:#6b7280;">
+          If you didn’t request this, you can ignore this message.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+    // Minimal MIME builder (for preview/export only)
+    function buildEml({to, fromName, fromEmail, subject, html}) {
+      const boundary = "----=_Boundary_" + Math.random().toString(16).slice(2);
+      const fromHeader = fromName ? `${fromName} <${fromEmail}>` : fromEmail;
+
+      // Basic RFC 5322-ish EML
+      return [
+        `To: ${to}`,
+        `From: ${fromHeader}`,
+        `Subject: ${subject || ""}`,
+        `MIME-Version: 1.0`,
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        ``,
+        `--${boundary}`,
+        `Content-Type: text/plain; charset="utf-8"`,
+        `Content-Transfer-Encoding: 7bit`,
+        ``,
+        `This email contains HTML content. Please view it in an HTML-capable email client.`,
+        ``,
+        `--${boundary}`,
+        `Content-Type: text/html; charset="utf-8"`,
+        `Content-Transfer-Encoding: 7bit`,
+        ``,
+        html || "",
+        ``,
+        `--${boundary}--`,
+        ``
+      ].join("\r\n");
+    }
+
+    function download(filename, content, mime) {
+      const blob = new Blob([content], {type: mime || "application/octet-stream"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // --- Tabs ---
+    document.querySelectorAll(".pill").forEach(p => {
+      p.addEventListener("click", () => {
+        document.querySelectorAll(".pill").forEach(x => x.classList.remove("active"));
+        p.classList.add("active");
+        const tab = p.dataset.tab;
+        ["tabPreview","tabSource","tabMime"].forEach(id => $(id).classList.add("hidden"));
+        $(tab).classList.remove("hidden");
+      });
+    });
+
+    // --- Main actions ---
+    function updateViewer() {
+      const html = $("html_body").value || "";
+      const iframe = $("viewer");
+      iframe.srcdoc = html;
+      $("sourceBox").textContent = html;
+      // update MIME box too
+      const eml = buildEml({
+        to: $("recipient_email").value.trim(),
+        fromName: $("from_name").value.trim(),
+        fromEmail: $("from_email").value.trim(),
+        subject: $("subject").value.trim(),
+        html
+      });
+      $("mimeBox").textContent = eml;
+    }
+
+    function validate() {
+      const errors = [];
+      const to = $("recipient_email").value.trim();
+      const fromEmail = $("from_email").value.trim();
+      const port = $("smtp_port").value.trim();
+
+      if (!isEmail(to)) errors.push("Recipient email is invalid.");
+      if (fromEmail && !isEmail(fromEmail)) errors.push("From email is invalid.");
+      if (port && (Number(port) < 1 || Number(port) > 65535)) errors.push("SMTP port must be 1–65535.");
+
+      const html = $("html_body").value.trim();
+      if (!html) errors.push("HTML body is empty.");
+
+      if (errors.length === 0) {
+        setStatus("ok", "Looks good ✅");
+        return { ok: true, errors: [] };
+      } else if (errors.length <= 2) {
+        setStatus("warn", errors[0]);
+        return { ok: false, errors };
+      } else {
+        setStatus("bad", errors[0]);
+        return { ok: false, errors };
+      }
+    }
+
+    // Live update on typing (debounced)
+    let t;
+    ["recipient_email","from_email","from_name","subject","html_body"].forEach(id => {
+      $(id).addEventListener("input", () => {
+        clearTimeout(t);
+        t = setTimeout(() => { updateViewer(); validate(); }, 180);
+      });
+    });
+
+    $("btnPreview").addEventListener("click", () => {
+      updateViewer();
+      validate();
+      // force Preview tab
+      document.querySelector('[data-tab="tabPreview"]').click();
+      setStatus("ok", "Preview updated ✨");
+    });
+
+    $("btnCopy").addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText($("html_body").value);
+        setStatus("ok", "HTML copied to clipboard ✅");
+      }catch(e){
+        setStatus("warn", "Clipboard blocked by browser.");
+      }
+    });
+
+    $("btnDownloadHtml").addEventListener("click", () => {
+      const html = $("html_body").value || "";
+      download("email.html", html, "text/html;charset=utf-8");
+      setStatus("ok", "Downloaded email.html ✅");
+    });
+
+    $("btnDraft").addEventListener("click", () => {
+      const v = validate();
+      if (!v.ok) {
+        setStatus("warn", "Fix validation errors before draft.");
+        return;
+      }
+      const eml = buildEml({
+        to: $("recipient_email").value.trim(),
+        fromName: $("from_name").value.trim(),
+        fromEmail: $("from_email").value.trim(),
+        subject: $("subject").value.trim(),
+        html: $("html_body").value
+      });
+      download("email.eml", eml, "message/rfc822");
+      // show MIME tab
+      document.querySelector('[data-tab="tabMime"]').click();
+      setStatus("ok", "Draft email.eml created ✅");
+    });
+
+    $("btnTest").addEventListener("click", () => {
+      const v = validate();
+      if (!v.ok) {
+        alert("Validation errors:\n\n- " + v.errors.join("\n- "));
+      } else {
+        alert("Validation OK ✅\n\nThis page does not send emails.\nUse 'Create .eml Draft' to open and send from your email client.");
+      }
+    });
+
+    // --- Init defaults ---
+    $("from_name").value = "ClinicalTrials";
+    $("subject").value = "Confirmation Receipt";
+    $("smtp_server").value = "smtp.mail.ru";
+    $("smtp_port").value = "25";
+    $("html_body").value = defaultHtml;
+
+    updateViewer();
+    setStatus("", "Waiting…");
+  </script>
+</body>
+</html>
